@@ -1,4 +1,4 @@
-# read slices from files .mat (vec, val and proj ) and plot
+# save csv with patients in directory
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,9 +8,8 @@ import scipy.io
 
 directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples"
-group = "stage1"
+#group = "stage1"
 path = directory + '/' + group 
-patient = "00cba091fa4ad62cc3200a657aeb957e"
 
 patients = [s for s in os.listdir(path + '/')]
 #a = {}

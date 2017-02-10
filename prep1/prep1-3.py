@@ -83,7 +83,9 @@ directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples"
 group = "stage1"
 path = directory + '/' + group 
-patients = pd.read_csv('patients_carlos.csv')
+#patients = pd.read_csv('patients_carlos.csv')
+patients = pd.read_csv('patients_roma.csv')
+#patients = pd.read_csv('patients.csv')
 patients = patients.values.tolist()
 #print patients[1].tolist()
 

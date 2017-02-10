@@ -40,5 +40,5 @@ print g.tolist()
 #for i,j in dfg:
 #	print i,j
 
-#plt.hist(ns, bins=5000)
-#plt.show()
+plt.hist(ns, bins=5000)
+plt.show()
