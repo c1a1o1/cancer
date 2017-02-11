@@ -20,18 +20,17 @@ import pandas as pd
 def add_file(name, label, part):
 	slices = []
 	for c1 in part:
-		print "c1[2]", c1[2].shape, c1[2].dtype
+		#print "c1[2]", c1[2].shape, c1[2].dtype
 		slices.append((c1[2], label))
 
 	a = {}
 	a["slices"] = slices
-	z()
 	scipy.io.savemat(new_dir + name, a, do_compression=True)
 
 
 directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples"
-group = "stage1"
+#group = "stage1"
 
 ori_dir = directory + '/' + group  + '/'
 old_dir = directory + '/' + group + '_100' + '/'

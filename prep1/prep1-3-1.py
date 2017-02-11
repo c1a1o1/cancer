@@ -74,7 +74,6 @@ def save_patient(patient, path):
 				, projection.astype(np.float32)
 				, np.mean(img, axis=0).astype(np.float32)
 				))
-		print "princomp", k.elapsed()
 
 	a = {}
 	a["c"] = c
@@ -84,18 +83,13 @@ def save_patient(patient, path):
 k = kronos.krono()
 npc = 100
 directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
-group = "stage 1 samples"
-#group = "stage1"
+#group = "stage 1 samples"
+group = "stage1"
 path = directory + '/' + group 
-#patients = pd.read_csv('patients_carlos.csv')
-#patients = pd.read_csv('patients_roma.csv')
-patients = pd.read_csv('patients.csv')
-patients = patients.values.tolist()
-#print patients[1].tolist()
+patients = [s for s in os.listdir(path)]
 
-#for patient in os.listdir(path):
 for patient in patients:
-	name = patient[0]
+	name = patient
 	print name
 	save_patient(name, path)
-	
+	print "elapsed", k.elapsed()

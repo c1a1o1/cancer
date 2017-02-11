@@ -10,6 +10,7 @@ directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples_100"
 path = directory + '/' + group 
 patient = "00cba091fa4ad62cc3200a657aeb957e"
+patient = "0a099f2549429d29b32f349e95fb2244"
 
 mat = scipy.io.loadmat(path + '/' + patient)
 n,m = mat['c'].shape
