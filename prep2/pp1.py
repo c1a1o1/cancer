@@ -16,18 +16,38 @@ import os
 import scipy.io
 import matplotlib.pyplot as plt
 import pandas as pd
+import tensorflow as tf
 
 def add_file(name, label, part):
 	slices = []
 	for c1 in part:
 		print "c1[2]", c1[2].shape, c1[2].dtype, c1[2][0].shape, c1[2][0][0]
+		#print "c1[2]", c1[2].shape, c1[2].dtype
 		slices.append((c1[2], label))
 
 	a = {}
 	a["slices"] = slices
-	z()
 	#scipy.io.savemat(new_dir + name, a, do_compression=True)
 
+def add_file_tfrecords(name, label, part):
+	writer = tf.python_io.TFRecordWriter(new_dir + name + ".tfrecords")
+	for c1 in part:
+		example = tf.train.Example(
+			features=tf.train.Features(
+				feature={
+					'label': tf.train.Feature(
+						int64_list=tf.train.Int64List(value=[label])),
+					'vec': tf.train.Feature(
+						float_list=tf.train.FloatList(value=c1[0].flatten().tolist())),
+					'proj': tf.train.Feature(
+						float_list=tf.train.FloatList(value=c1[2].flatten().tolist())),
+					'med': tf.train.Feature(
+						float_list=tf.train.FloatList(value=c1[3].flatten().tolist())),
+		}))
+		writer.write(example.SerializeToString())
+		#print "c1[2]", c1[2].shape, c1[2].dtype, c1[2][0].shape, c1[2][0][0]
+
+	writer.close()
 
 directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples"
@@ -48,5 +68,10 @@ for patient in labels:
 		if nslices >=100 and nslices<200:
 			print patient[0], patient[1]
 			mat = scipy.io.loadmat(old_dir + patient[0])
-			add_file(patient[0] + "_1", patient[1], mat["c"][:100])
-			add_file(patient[0] + "_2", patient[1], mat["c"][-100:])
+			add_file_tfrecords(patient[0] + "_1", patient[1], mat["c"][:100])
+			add_file_tfrecords(patient[0] + "_2", patient[1], mat["c"][-100:])
+
+#			add_file(patient[0] + "_1", patient[1], mat["c"][:100])
+#			add_file(patient[0] + "_2", patient[1], mat["c"][-100:])
+#			break
+

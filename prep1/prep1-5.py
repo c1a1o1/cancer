@@ -9,8 +9,8 @@ import scipy.io
 directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer"
 group = "stage 1 samples_100"
 path = directory + '/' + group 
-patient = "00cba091fa4ad62cc3200a657aeb957e"
-patient = "0a099f2549429d29b32f349e95fb2244"
+patient = "0a0c32c9e08cc2ea76a71649de56be6d"
+#patient = "0a099f2549429d29b32f349e95fb2244"
 
 mat = scipy.io.loadmat(path + '/' + patient)
 n,m = mat['c'].shape
@@ -19,13 +19,13 @@ i = 1
 for slice in mat['c']:
 	Ar = np.dot(slice[0], slice[2]).T + slice[3]
 	Ar[Ar==2000] = 0
-	#ax = plt.subplot(11, 15, i, frame_on=False)
-	#ax.xaxis.set_major_locator(plt.NullLocator()) # remove ticks
-	#ax.yaxis.set_major_locator(plt.NullLocator())
+	ax = plt.subplot(11, 15, i, frame_on=False)
+	ax.xaxis.set_major_locator(plt.NullLocator()) # remove ticks
+	ax.yaxis.set_major_locator(plt.NullLocator())
+	#plt.title(group)
 	plt.gray()
-	plt.title(group)
 	plt.imshow(Ar)
 	i+=1
-	break
-
+	#break
+print "end"
 plt.show()
