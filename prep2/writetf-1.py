@@ -61,17 +61,28 @@ if not os.path.exists(new_dir):
 
 labels = pd.read_csv(directory + '/' + group + '_labels.csv')
 labels = labels.values.tolist()
+#print len(labels), labels[0][0]
 
+ready = [x.split('.')[0].split('_')[0] for x in os.listdir(new_dir)]
+#print len(ready), ready[0]
+labels = [x for x in labels if x[0] not in ready and x[0]!="34cb3ac3d04e0d961e7578713bee6bb2"]
+print len(labels)
+
+bads = []
 for patient in labels:
 	if os.path.isfile(old_dir + patient[0] + ".mat"):
 		nslices = len(os.listdir(ori_dir + patient[0]))
 		if nslices >=100 and nslices<200:
-			print patient[0], patient[1]
-			mat = scipy.io.loadmat(old_dir + patient[0])
-			add_file_tfrecords(patient[0] + "_1", patient[1], mat["c"][:100])
-			add_file_tfrecords(patient[0] + "_2", patient[1], mat["c"][-100:])
+			try:
+				print patient[0], patient[1]
+				mat = scipy.io.loadmat(old_dir + patient[0])
+				add_file_tfrecords(patient[0] + "_1", patient[1], mat["c"][:100])
+				add_file_tfrecords(patient[0] + "_2", patient[1], mat["c"][-100:])
 
-#			add_file(patient[0] + "_1", patient[1], mat["c"][:100])
-#			add_file(patient[0] + "_2", patient[1], mat["c"][-100:])
-#			break
+	#			add_file(patient[0] + "_1", patient[1], mat["c"][:100])
+	#			add_file(patient[0] + "_2", patient[1], mat["c"][-100:])
+			except:
+				bads.append(patient[0])
+
+print bads
 

@@ -12,7 +12,62 @@ import numpy as np
 from apiepi import *
 import scipy.io
 
-def train_tf(images, labels, parameters, training_epochs = 100):
+def queue(filename):
+    filename_queue = tf.train.string_input_producer(tf.train.match_filenames_once(filename))
+    reader = tf.TFRecordReader()
+    _, serialized_example = reader.read(filename_queue)
+    features = tf.parse_single_example(
+        serialized_example,
+        # Defaults are not specified since both keys are required.
+        features={
+        'prot': tf.FixedLenFeature([], tf.string),
+        'label': tf.FixedLenFeature([], tf.int64),
+    })
+    return features["prot"], features["label"]
+
+
+def q(filename):
+    filename_queue = tf.train.string_input_producer(tf.train.match_filenames_once(filename))
+    
+    reader = tf.TFRecordReader()
+    #reader = tf.FixedLengthRecordReader(record_bytes=512x100)
+    key, value = reader.read(filename_queue)
+
+    ex = tf.parse_single_example(filename_queue)
+
+    example = tf.train.Example()
+    example.ParseFromString(serialized_example)
+
+    # traverse the Example format to get data
+    label = np.array(example.features.feature['label'].int64_list.value)
+    vec = np.array(example.features.feature['vec'].float_list.value, dtype="float32").reshape([512, 100])
+    proj = np.array(example.features.feature['proj'].float_list.value).reshape([100, 512])
+    mean = np.array(example.features.feature['med'].float_list.value)
+
+
+    # Convert from a string to a vector of uint8 that is record_bytes long.
+    record_bytes = tf.decode_raw(value, tf.uint8)
+    #example.ParseFromString(serialized_example)
+
+    # traverse the Example format to get data
+    image = record_bytes.features.feature['proj'].bytes.value
+    label = record_bytes.features.feature['label'].int64_list.value
+
+    # The first bytes represent the label, which we convert from uint8->int32.
+    result.label = tf.cast(
+      tf.strided_slice(record_bytes, [0], [label_bytes]), tf.int32)
+
+    image.set_shape([img_height, img_width, channels_jpg])
+    batch_size = 30
+    x, y = tf.train.shuffle_batch(
+        [image, label], batch_size = batch_size, 
+        capacity = 1000,
+        min_after_dequeue = 600)
+    x = tf.cast(x, tf.float32)
+    y = tf.cast(y, tf.float32)
+    return x, y 
+
+def train_tf(x, y, parameters, training_epochs = 100):
 #    display_step = 100
     cv1_size = parameters["cv1_size"]
     cv2_size = parameters["cv2_size"]
@@ -28,8 +83,8 @@ def train_tf(images, labels, parameters, training_epochs = 100):
     best_acc = 0
     best_auc = 0
 
-    x = tf.placeholder(tf.float32, shape=[None, 256])
-    y = tf.placeholder(tf.float32, shape=[None, 2])  
+    #x = tf.placeholder(tf.float32, shape=[None, 256])
+    #y = tf.placeholder(tf.float32, shape=[None, 2])  
       
     # First Convolutional Layer  
     W_conv1 = weight_variable([cv1_size, cv1_size, 1, cv1_channels])
@@ -94,7 +149,8 @@ def train_tf(images, labels, parameters, training_epochs = 100):
         # Training cycle
         for epoch in xrange(training_epochs):
     #         print epoch
-            _, c = sess.run([optimizer, cost], feed_dict={x: images, y: labels, keep_prob: dropout})
+            _, c, acc = sess.run([optimizer, cost, accuracy], feed_dict={keep_prob: dropout})
+            #_, c = sess.run([optimizer, cost], feed_dict={x: images, y: labels, keep_prob: dropout})
             if (epoch+1) % display_step == 0:
                 print "Epoch:", '%04d' % (epoch+1), "cost=", "{:.9f}".format(c)
                 
@@ -147,8 +203,8 @@ def train_tf(images, labels, parameters, training_epochs = 100):
     
         # Test model
      
-        acc = accuracy.eval({x:images, y: labels, keep_prob: 1})    
-        prob = pred.eval({x:images, y: labels, keep_prob: 1})
+        #acc = accuracy.eval({x:images, y: labels, keep_prob: 1})    
+        #prob = pred.eval({x:images, y: labels, keep_prob: 1})
 #         print auctf[0]
 #         aucr = auctf[0].eval({x:images, y: labels, keep_prob: 1})
         
