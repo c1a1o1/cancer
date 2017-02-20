@@ -16,10 +16,9 @@ print "begin"
 parameters = params.get()
 training_epochs = 20
 
-directory = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/"
-group = "stage1_100_100_200"
-filename = directory + group + "/*.tfrecords"
-x, y = model.queue(filename)
+path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200/"
+files = [path + file for file in os.listdir(path)]
+x, y, name = model.tf_queue(files)
 
 features, prob, acc, cost = model.train_tf(x, y, parameters, training_epochs=training_epochs)
 

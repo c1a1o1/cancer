@@ -16,14 +16,15 @@ def tfqueue(files):
 	    data,
 	    features = {
 		    'label': tf.FixedLenFeature([1], tf.int64),
-		    'vec': tf.FixedLenFeature([512, 100], tf.float32),
-		    'proj': tf.FixedLenFeature([100, 512], tf.float32),
-		    'med': tf.FixedLenFeature([512], tf.float32),
+		    'vec': tf.FixedLenFeature([100, 512, 100], tf.float32),
+		    'proj': tf.FixedLenFeature([100, 100, 512], tf.float32),
+		    'mean': tf.FixedLenFeature([100, 512], tf.float32),
 		}
 	)
-	image = tf.transpose(tf.matmul(example['vec'], example['proj'])) + example['med']
+	image = example["vec"]
+	#image = tf.transpose(tf.matmul(example['vec'][10], example['proj'][10])) + example['mean'][10]
+	
 	label = tf.cast(example['label'], tf.int32)	
-
 	def f1(): return tf.constant([0, 1])
 	def f2(): return tf.constant([1, 0])
 	label = tf.cond(label[0]>0, f1, f2)
@@ -46,11 +47,11 @@ with tf.Session() as sess:
 		print "name", name, label
 		print "vec", len(image), image.shape
 
-		#plt.gray()
-		#plt.imshow(image_py)
-		#plt.show()
+		# plt.gray()
+		# plt.imshow(image)
+		# plt.show()
 
 coord.request_stop()
-coord.join(threads)
+#coord.join(threads)
 sess.close()
 print "end"
