@@ -93,15 +93,7 @@ labels = labels.values.tolist()
 for patient in labels:
 	if os.path.isfile(old_dir + patient[0] + ".mat"):
 		nslices = len(os.listdir(ori_dir + patient[0]))
-		if nslices >=100 and nslices<200:
-			mat = None
-			if not os.path.isfile(new_dir + patient[0] + "_1.tfrecords"):
-				mat = read_mat(old_dir + patient[0], mat)
-				if mat:
-					add_file_tfrecords(patient[0] + "_1", patient[1], mat["c"][:100])
-			if nslices > 100 and not os.path.isfile(new_dir + patient[0] + "_2.tfrecords"):
-				mat = read_mat(old_dir + patient[0], mat)
-				if mat:
-					add_file_tfrecords(patient[0] + "_2", patient[1], mat["c"][-100:])
-
-
+		mat = read_mat(old_dir + patient[0], None)
+		if mat:
+			for i in xrange(nslices - 2):
+				add_file_tfrecords(patient[0] + "_" + str(i), patient[1], mat["c"][i: i + 3])

@@ -5,7 +5,8 @@ Created on Nov 16, 2016
 '''
 
 def get():
-    return { "cv1_size": 5
+    return { "image_channels": 100 
+    	   , "cv1_size": 5
            , "cv2_size": 5
            , "cv1_channels": 4
            , "cv2_channels": 8

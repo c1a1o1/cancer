@@ -16,9 +16,9 @@ def tfqueue(files):
 	    data,
 	    features = {
 		    'label': tf.FixedLenFeature([2], tf.int64),
-		    'vec': tf.FixedLenFeature([100, 512, 100], tf.float32),
-		    'proj': tf.FixedLenFeature([100, 100, 512], tf.float32),
-		    'mean': tf.FixedLenFeature([100, 512], tf.float32),
+		    'vec': tf.FixedLenFeature([3, 512, 100], tf.float32),
+		    'proj': tf.FixedLenFeature([3, 100, 512], tf.float32),
+		    'mean': tf.FixedLenFeature([3, 512], tf.float32),
 		}
 	)
 	image = example["vec"]
@@ -33,7 +33,8 @@ def tfqueue(files):
 
 	return image, label, name
 
-path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200/"
+#path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200/"
+path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200_test/"
 files = [path + file for file in os.listdir(path)]
 samples = len(files)
 tfimage, tflabel, tfname = tfqueue(files)

@@ -16,24 +16,30 @@ def tfqueue(files):
 	    data,
 	    features = {
 		    'label': tf.FixedLenFeature([2], tf.int64),
-		    'vec': tf.FixedLenFeature([100, 512, 100], tf.float32),
-		    'proj': tf.FixedLenFeature([100, 100, 512], tf.float32),
-		    'mean': tf.FixedLenFeature([100, 512], tf.float32),
+		    'vec': tf.FixedLenFeature([512, 100], tf.float32),
+		    'proj': tf.FixedLenFeature([100, 512], tf.float32),
+		    'mean': tf.FixedLenFeature([512], tf.float32),
 		}
 	)
-	image = example["vec"]
-	#image = tf.transpose(tf.matmul(example['vec'][10], example['proj'][10])) + example['mean'][10]
-	
+
+	image = tf.transpose(tf.matmul(example['vec'], example['proj'])) + example['mean']	
 	label = [tf.cast(example['label'], tf.float32)]
+	x, y = tf.train.shuffle_batch(
+    	[image, label], batch_size = 100, 
+    	capacity = 1000,
+    	min_after_dequeue = 600)
+
+	#image = example["vec"]
 	# label = example['label']
 	# label = tf.cast(example['label'], tf.int32)	
 	# def f1(): return tf.constant([0, 1])
 	# def f2(): return tf.constant([1, 0])
 	# label = tf.cond(label[0]>0, f1, f2)
 
-	return image, label, name
+	return x, y, name
 
-path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200/"
+#path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200/"
+path = "/media/carlos/CE2CDDEF2CDDD317/concursos/cancer/stage1_100_100_200_test/"
 files = [path + file for file in os.listdir(path)]
 samples = len(files)
 tfimage, tflabel, tfname = tfqueue(files)
@@ -43,19 +49,20 @@ with tf.Session() as sess:
 	sess.run(init)
 	coord = tf.train.Coordinator()
 	threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-	for step in xrange(samples):
+	for step in xrange(5):
 		print "step:", step + 1
 		name, image, label = sess.run([tfname, tfimage, tflabel])
 		print "name", name, label
 		print "vec", len(image), image.shape
-		# for i in image:
-		# 	a = i + 1
 
-		# plt.gray()
-		# plt.imshow(image)
-		# plt.show()
+		plt.gray()
+		plt.imshow(image[50])
+		plt.show()
 
 coord.request_stop()
-coord.join(threads)
+try: 
+    coord.join(threads)
+except:
+    pass
 sess.close()
 print "end"

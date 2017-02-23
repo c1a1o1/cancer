@@ -20,7 +20,7 @@ def tf_queue(files):
     example = tf.parse_single_example(
         data,
         features = {
-            'label': tf.FixedLenFeature([2], tf.float32),
+            'label': tf.FixedLenFeature([2], tf.int64),
             'vec': tf.FixedLenFeature([100, 512, 100], tf.float32),
             'proj': tf.FixedLenFeature([100, 100, 512], tf.float32),
             'mean': tf.FixedLenFeature([100, 512], tf.float32),
@@ -29,15 +29,15 @@ def tf_queue(files):
     image = example['vec']
     #label = example['label']
 
-    label = tf.cast(example['label'], tf.float32) 
+    label = [tf.cast(example['label'], tf.float32)]
     # def f1(): return tf.constant([0., 1.])
     # def f2(): return tf.constant([1., 0.])
     # label = tf.cond(label[0]>0, f1, f2)
 
     return image, label, name
 
-def train_tf(x, y, parameters, training_epochs = 100):
-#    display_step = 100
+def train_tf(files, parameters, training_epochs = 100):
+    image_channels = parameters["image_channels"]
     cv1_size = parameters["cv1_size"]
     cv2_size = parameters["cv2_size"]
     cv1_channels = parameters["cv1_channels"]
@@ -47,20 +47,24 @@ def train_tf(x, y, parameters, training_epochs = 100):
     img_width = parameters["img_width"]
     learning_rate = parameters["learning_rate"]
     dropout = parameters["dropout"]
+    
     display_step = 1
+    save_step = 1000
+    if save_step > training_epochs:
+        save_step = training_epochs
     
     best_cost = 1e99
     best_acc = 0
-    best_auc = 0
 
     #x = tf.placeholder(tf.float32, shape=[None, 256])
     #y = tf.placeholder(tf.float32, shape=[None, 2])  
-      
+    x, y, name = tf_queue(files)
+
     # First Convolutional Layer  
-    W_conv1 = weight_variable([cv1_size, cv1_size, 100, cv1_channels])
+    W_conv1 = weight_variable([cv1_size, cv1_size, image_channels, cv1_channels])
     b_conv1 = bias_variable([cv1_channels])
     
-    x_image = tf.reshape(x, [-1, img_height, img_width, 100])
+    x_image = tf.reshape(x, [-1, img_height, img_width, image_channels])
     
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
     h_pool1 = max_pool_2x2(h_conv1)
@@ -92,30 +96,20 @@ def train_tf(x, y, parameters, training_epochs = 100):
     b_fc2 = bias_variable([2])
     
     pred = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-    print "pred:", pred
-
-    #pred = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-    #cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=y))    
-    
-#     cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(pred, y, "cost"), name="cost")
-#     cost = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(pred, y, 5, "cost"), name="cost")
-    
-#     auctf = tf.py_func(auc, [y, pred], [tf.float64])
-#     loss = tf.cast(auctf[0], tf.float32)
-#     print "auctf", auctf
+    print "pred:", pred    
 
     cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred + 1e-20), reduction_indices=[1]))
-    #print "cost", cost
+    print "cost", cost
     #cost = tf.reduce_sum(loss)
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
     correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    
-    #init = tf.initialize_all_variables()
-    init = tf.global_variables_initializer()
-    
+    ye = y
+    pe = pred
+
+    init = tf.global_variables_initializer()    
     with tf.Session() as sess:
         sess.run(init)
         coord = tf.train.Coordinator()
@@ -124,14 +118,16 @@ def train_tf(x, y, parameters, training_epochs = 100):
         # Training cycle
         for epoch in xrange(training_epochs):
             print epoch
-            _, c = sess.run([optimizer, cost], feed_dict={keep_prob: dropout})
-            #_, c = sess.run([optimizer, cost], feed_dict={x: images, y: labels, keep_prob: dropout})
+            # _, c, acc, yp, pp = sess.run([optimizer, cost, accuracy, ye, pe], feed_dict={keep_prob: dropout})
+            try:
+                _, c, acc = sess.run([optimizer, cost, accuracy], feed_dict={keep_prob: dropout})
+            except:
+                print "error " + sess.run([name])
+
             if (epoch+1) % display_step == 0:
                 print "Epoch:", '%04d' % (epoch+1), "cost=", "{:.9f}".format(c)
                 
-            if c < best_cost:
-                best_cost = c
-                best_epoch_cost = epoch
+            if (epoch+1) % save_step == 0:
                 features = {}
                 features["W_conv1"] = W_conv1.eval()
                 features["b_conv1"] = b_conv1.eval()
@@ -140,65 +136,24 @@ def train_tf(x, y, parameters, training_epochs = 100):
                 features["W_fc1"] = W_fc1.eval()
                 features["b_fc1"] = b_fc1.eval()
                 features["W_fc2"] = W_fc2.eval()
-                features["b_fc2"] = b_fc2.eval()
-                scipy.io.savemat("resp_best_cost", features, do_compression=True) 
-            
-            acc = accuracy.eval({x:images, y: labels, keep_prob: 1})     
-            if acc > best_acc:
-                best_acc = acc
-                best_epoch_acc = epoch
-                features = {}
-                features["W_conv1"] = W_conv1.eval()
-                features["b_conv1"] = b_conv1.eval()
-                features["W_conv2"] = W_conv2.eval()
-                features["b_conv2"] = b_conv2.eval()
-                features["W_fc1"] = W_fc1.eval()
-                features["b_fc1"] = b_fc1.eval()
-                features["W_fc2"] = W_fc2.eval()
-                features["b_fc2"] = b_fc2.eval()
-                scipy.io.savemat("resp_best_acc", features, do_compression=True) 
-                
-            prob = pred.eval({x:images, y: labels, keep_prob: 1})
-            auc1 = auc(labels, prob)
-            if auc1 > best_auc and auc1 <= 1:
-                best_auc = c
-                best_epoch_auc = epoch
-                features = {}
-                features["W_conv1"] = W_conv1.eval()
-                features["b_conv1"] = b_conv1.eval()
-                features["W_conv2"] = W_conv2.eval()
-                features["b_conv2"] = b_conv2.eval()
-                features["W_fc1"] = W_fc1.eval()
-                features["b_fc1"] = b_fc1.eval()
-                features["W_fc2"] = W_fc2.eval()
-                features["b_fc2"] = b_fc2.eval()
-                scipy.io.savemat("resp_best_auc", features, do_compression=True) 
-    
+                features["b_fc2"] = b_fc2.eval()                
+                scipy.io.savemat("data/resp_%s" % (epoch+1), features, do_compression=True)
+        
         print "Optimization Finished!"
     
         # Test model
      
         #acc = accuracy.eval({x:images, y: labels, keep_prob: 1})    
         #prob = pred.eval({x:images, y: labels, keep_prob: 1})
-#         print auctf[0]
-#         aucr = auctf[0].eval({x:images, y: labels, keep_prob: 1})
         
-        features = {}
-        features["W_conv1"] = W_conv1.eval()
-        features["b_conv1"] = b_conv1.eval()
-        features["W_conv2"] = W_conv2.eval()
-        features["b_conv2"] = b_conv2.eval()
-        features["W_fc1"] = W_fc1.eval()
-        features["b_fc1"] = b_fc1.eval()
-        features["W_fc2"] = W_fc2.eval()
-        features["b_fc2"] = b_fc2.eval()
-    
-    print "best cost", best_cost, "epoch", best_epoch_cost
-    print "best acc", best_acc, "epoch", best_epoch_acc
-    print "best auc", best_auc, "epoch", best_epoch_auc
-
+    print "end trainning"
     coord.request_stop()
-    coord.join(threads)
+    try: 
+        coord.join(threads)
+    except:
+        pass
     sess.close()
+    prob = 0
+    #acc = 0
 
     return features, prob, acc, c
