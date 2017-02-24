@@ -8,7 +8,7 @@ Epoch: 13923 cost= 0.278997272
 import tensorflow as tf
 import numpy as np
 import scipy.io
-import epinn24 as model
+import model_train as model
 import params
 import apiepi as api
 import os

@@ -1,9 +1,4 @@
 '''
-convolutional
-
-Created on Nov 2, 2016
-
-
 @author: botpi
 '''
 
@@ -12,35 +7,6 @@ import numpy as np
 from apiepi import *
 import scipy.io
 import time
-
-def tf_queue(files):
-    filename_queue = tf.train.string_input_producer(files, shuffle=False)
-    reader = tf.TFRecordReader()
-    name, data = reader.read(filename_queue)
-        
-    example = tf.parse_single_example(
-        data,
-        features = {
-            'label': tf.FixedLenFeature([2], tf.int64),
-            'vec': tf.FixedLenFeature([512, 100], tf.float32),
-            'proj': tf.FixedLenFeature([100, 512], tf.float32),
-            'mean': tf.FixedLenFeature([512], tf.float32),
-        }
-    )
-    image = example['vec']
-    #label = example['label']
-
-    label = [tf.cast(example['label'], tf.float32)]
-    # def f1(): return tf.constant([0., 1.])
-    # def f2(): return tf.constant([1., 0.])
-    # label = tf.cond(label[0]>0, f1, f2)
-
-    x, y, z = tf.train.shuffle_batch(
-        [image, label, name], batch_size = 1, 
-        capacity = 1000,
-        min_after_dequeue = 600)
-
-    return x, y, z
 
 def train_tf(files, parameters, training_epochs = 100):
     image_channels = parameters["image_channels"]
